@@ -9,88 +9,88 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 221 83% 25%;
+    --primary: 23 100% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 221 83% 25%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 38 92% 50%;
+    --accent: 215 84% 25%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 25%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 23 100% 56%;
 
     --radius: 0.5rem;
 
-    --gradient-hero: linear-gradient(135deg, hsl(221 83% 25%), hsl(239 84% 37%));
+    --gradient-hero: linear-gradient(135deg, hsl(23 100% 56%), hsl(35 100% 62%));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 98%));
     
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 221 83% 25%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 23 100% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 221 83% 25%;
+    --sidebar-ring: 23 100% 56%;
   }
 
   .dark {
-    --background: 222.2 47.4% 11.2%;
+    --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
-    --card: 217.2 32.6% 17.5%;
+    --card: 217 33% 18%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 217.2 32.6% 17.5%;
+    --popover: 217 33% 18%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 221 83% 53%;
+    --primary: 23 100% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 33% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 18%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 38 92% 50%;
+    --accent: 215 84% 35%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 221 83% 53%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 23 100% 56%;
     
-    --gradient-hero: linear-gradient(135deg, hsl(221 83% 25%), hsl(239 84% 37%));
-    --gradient-card: linear-gradient(145deg, hsl(217.2 32.6% 17.5%), hsl(217.2 32.6% 20%));
+    --gradient-hero: linear-gradient(135deg, hsl(23 100% 56%), hsl(35 100% 62%));
+    --gradient-card: linear-gradient(145deg, hsl(217 33% 18%), hsl(217 33% 20%));
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-background: 240 6% 10%;
+    --sidebar-foreground: 240 5% 96%;
+    --sidebar-primary: 23 100% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 240 5% 96%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 23 100% 56%;
   }
 }
 
@@ -101,5 +101,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
