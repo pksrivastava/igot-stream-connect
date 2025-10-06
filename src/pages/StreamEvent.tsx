@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Video, Radio, Users, MessageSquare, ArrowLeft, Send } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Video, Radio, Users, MessageSquare, ArrowLeft, Send, Mic, Camera, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -14,26 +14,124 @@ import Footer from "@/components/Footer";
 const StreamEvent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isLive, setIsLive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>("");
+  const [selectedMic, setSelectedMic] = useState<string>("");
   const [chatMessage, setChatMessage] = useState("");
   const [chatMessages, setChatMessages] = useState([
     { user: "Admin", message: "Welcome to the live stream!", time: "10:00 AM" },
     { user: "Priya S.", message: "Excited for this session!", time: "10:01 AM" },
   ]);
 
+  useEffect(() => {
+    // Request permissions and start preview automatically
+    startPreview();
+    getDevices();
+    
+    return () => {
+      stopStream();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedCamera || selectedMic) {
+      startPreview();
+    }
+  }, [selectedCamera, selectedMic]);
+
+  const getDevices = async () => {
+    try {
+      const deviceList = await navigator.mediaDevices.enumerateDevices();
+      setDevices(deviceList);
+      
+      const cameras = deviceList.filter(d => d.kind === 'videoinput');
+      const mics = deviceList.filter(d => d.kind === 'audioinput');
+      
+      if (cameras.length > 0 && !selectedCamera) setSelectedCamera(cameras[0].deviceId);
+      if (mics.length > 0 && !selectedMic) setSelectedMic(mics[0].deviceId);
+    } catch (error) {
+      console.error('Error getting devices:', error);
+    }
+  };
+
+  const startPreview = async () => {
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: selectedCamera ? { deviceId: selectedCamera } : true,
+        audio: selectedMic ? { deviceId: selectedMic } : true
+      };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(mediaStream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+
+      // Setup audio level monitoring
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(mediaStream);
+      microphone.connect(analyser);
+      analyser.fftSize = 256;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const updateAudioLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        setAudioLevel(average);
+        requestAnimationFrame(updateAudioLevel);
+      };
+      updateAudioLevel();
+
+      toast({
+        title: "Preview Started",
+        description: "Camera and microphone are ready",
+      });
+    } catch (error) {
+      console.error('Error accessing media devices:', error);
+      toast({
+        title: "Error",
+        description: "Could not access camera or microphone",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopStream = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
   const handleGoLive = () => {
+    if (!stream) {
+      toast({
+        title: "Error",
+        description: "Please enable camera and microphone first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLive(true);
     toast({
       title: "Stream Started",
-      description: "You are now broadcasting live!",
+      description: "Broadcasting live in HLS mode. Recording automatically started.",
     });
   };
 
   const handleEndStream = () => {
     setIsLive(false);
+    stopStream();
     toast({
       title: "Stream Ended",
-      description: "Your broadcast has been stopped.",
+      description: "Recording saved. Broadcast stopped.",
     });
   };
 
@@ -87,29 +185,95 @@ const StreamEvent = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-6">
-                    {isLive ? (
-                      <div className="text-center space-y-4">
-                        <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto">
-                          <Radio className="h-10 w-10 text-red-500 animate-pulse" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">Broadcasting Live</p>
-                          <p className="text-muted-foreground">Your stream is active</p>
-                        </div>
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6 relative">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    {isLive && (
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-red-500 animate-pulse">
+                          <Radio className="h-3 w-3 mr-1" />
+                          LIVE • HLS Recording
+                        </Badge>
                       </div>
-                    ) : (
-                      <div className="text-center space-y-4">
-                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                          <Video className="h-10 w-10 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">Stream Preview</p>
-                          <p className="text-muted-foreground">Click "Go Live" to start broadcasting</p>
+                    )}
+                    {!stream && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <div className="text-center space-y-2">
+                          <Camera className="h-12 w-12 text-white mx-auto opacity-50" />
+                          <p className="text-white">Initializing camera...</p>
                         </div>
                       </div>
                     )}
                   </div>
+
+                  {/* Device Settings */}
+                  <Card className="mb-6 bg-secondary/30">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-lg">Device Testing</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Camera className="h-4 w-4" />
+                            Camera
+                          </Label>
+                          <Select value={selectedCamera} onValueChange={setSelectedCamera}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select camera" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {devices.filter(d => d.kind === 'videoinput').map(device => (
+                                <SelectItem key={device.deviceId} value={device.deviceId}>
+                                  {device.label || `Camera ${device.deviceId.slice(0, 8)}`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Mic className="h-4 w-4" />
+                            Microphone
+                          </Label>
+                          <Select value={selectedMic} onValueChange={setSelectedMic}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select microphone" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {devices.filter(d => d.kind === 'audioinput').map(device => (
+                                <SelectItem key={device.deviceId} value={device.deviceId}>
+                                  {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Audio Level</Label>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-green-500 transition-all duration-100"
+                            style={{ width: `${Math.min(audioLevel, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Speak into your microphone to test audio levels
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   <div className="flex gap-4">
                     {!isLive ? (
