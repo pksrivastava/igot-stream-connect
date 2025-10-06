@@ -14,7 +14,121 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_recordings: {
+        Row: {
+          created_at: string | null
+          duration: number | null
+          event_id: string
+          file_path: string
+          file_size: number | null
+          format: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration?: number | null
+          event_id: string
+          file_path: string
+          file_size?: number | null
+          format?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          duration?: number | null
+          event_id?: string
+          file_path?: string
+          file_size?: number | null
+          format?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_recordings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration: number
+          event_type: string
+          id: string
+          organizer_id: string
+          recording_url: string | null
+          scheduled_date: string
+          status: string | null
+          stream_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration: number
+          event_type: string
+          id?: string
+          organizer_id: string
+          recording_url?: string | null
+          scheduled_date: string
+          status?: string | null
+          stream_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration?: number
+          event_type?: string
+          id?: string
+          organizer_id?: string
+          recording_url?: string | null
+          scheduled_date?: string
+          status?: string | null
+          stream_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
