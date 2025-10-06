@@ -1,11 +1,37 @@
 import { Button } from "@/components/ui/button";
-import { Video, Calendar, Users, Menu } from "lucide-react";
-import { useState } from "react";
+import { Video, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully",
+    });
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,8 +54,19 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost">Sign In</Button>
-          <Button variant="hero" onClick={() => navigate("/create-event")}>Get Started</Button>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground">
+                {user.email}
+              </span>
+              <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => navigate("/auth")}>Sign In</Button>
+              <Button variant="hero" onClick={() => navigate("/auth")}>Get Started</Button>
+            </>
+          )}
         </div>
 
         <button 
