@@ -231,11 +231,13 @@ const StreamEvent = () => {
                               <SelectValue placeholder="Select camera" />
                             </SelectTrigger>
                             <SelectContent>
-                              {devices.filter(d => d.kind === 'videoinput').map(device => (
-                                <SelectItem key={device.deviceId} value={device.deviceId}>
-                                  {device.label || `Camera ${device.deviceId.slice(0, 8)}`}
-                                </SelectItem>
-                              ))}
+                              {devices
+                                .filter(d => d.kind === 'videoinput' && d.deviceId)
+                                .map(device => (
+                                  <SelectItem key={device.deviceId} value={device.deviceId}>
+                                    {device.label || `Camera ${device.deviceId.slice(0, 8)}`}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -250,11 +252,13 @@ const StreamEvent = () => {
                               <SelectValue placeholder="Select microphone" />
                             </SelectTrigger>
                             <SelectContent>
-                              {devices.filter(d => d.kind === 'audioinput').map(device => (
-                                <SelectItem key={device.deviceId} value={device.deviceId}>
-                                  {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
-                                </SelectItem>
-                              ))}
+                              {devices
+                                .filter(d => d.kind === 'audioinput' && d.deviceId)
+                                .map(device => (
+                                  <SelectItem key={device.deviceId} value={device.deviceId}>
+                                    {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </div>
