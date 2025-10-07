@@ -10,6 +10,10 @@ import { Video, Radio, Users, MessageSquare, ArrowLeft, Send, Mic, Camera, Setti
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { InviteParticipants } from "@/components/InviteParticipants";
+import { PollManager } from "@/components/PollManager";
+import { SurveyManager } from "@/components/SurveyManager";
+import { RecordingViewer } from "@/components/RecordingViewer";
 
 const StreamEvent = () => {
   const navigate = useNavigate();
@@ -297,7 +301,10 @@ const StreamEvent = () => {
               {/* Stream Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Stream Information</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Stream Information</CardTitle>
+                    <InviteParticipants eventId="demo-event-id" />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-3">
@@ -319,6 +326,23 @@ const StreamEvent = () => {
                       </Badge>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Recordings */}
+              <RecordingViewer eventId="demo-event-id" />
+
+              {/* Polls */}
+              <Card>
+                <CardContent className="pt-6">
+                  <PollManager eventId="demo-event-id" isOrganizer={true} />
+                </CardContent>
+              </Card>
+
+              {/* Surveys */}
+              <Card>
+                <CardContent className="pt-6">
+                  <SurveyManager eventId="demo-event-id" isOrganizer={true} />
                 </CardContent>
               </Card>
             </div>

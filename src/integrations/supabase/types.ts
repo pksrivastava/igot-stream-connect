@@ -46,6 +46,44 @@ export type Database = {
           },
         ]
       }
+      event_polls: {
+        Row: {
+          created_at: string | null
+          ends_at: string | null
+          event_id: string
+          id: string
+          is_active: boolean | null
+          options: Json
+          question: string
+        }
+        Insert: {
+          created_at?: string | null
+          ends_at?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean | null
+          options: Json
+          question: string
+        }
+        Update: {
+          created_at?: string | null
+          ends_at?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean | null
+          options?: Json
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_polls_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_recordings: {
         Row: {
           created_at: string | null
@@ -77,6 +115,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "event_recordings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_surveys: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          is_active: boolean | null
+          questions: Json
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean | null
+          questions: Json
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean | null
+          questions?: Json
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_surveys_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
@@ -128,6 +201,70 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      poll_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          option_id: string
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          option_id: string
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          option_id?: string
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_responses_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "event_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          responses: Json
+          survey_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          responses: Json
+          survey_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          responses?: Json
+          survey_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "event_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
