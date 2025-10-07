@@ -14,6 +14,9 @@ import { InviteParticipants } from "@/components/InviteParticipants";
 import { PollManager } from "@/components/PollManager";
 import { SurveyManager } from "@/components/SurveyManager";
 import { RecordingViewer } from "@/components/RecordingViewer";
+import { BreakoutRoomManager } from "@/components/BreakoutRoomManager";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ActivityReport } from "@/components/ActivityReport";
 
 const StreamEvent = () => {
   const navigate = useNavigate();
@@ -30,6 +33,7 @@ const StreamEvent = () => {
     { user: "Admin", message: "Welcome to the live stream!", time: "10:00 AM" },
     { user: "Priya S.", message: "Excited for this session!", time: "10:01 AM" },
   ]);
+  const [translatedCaption, setTranslatedCaption] = useState("");
 
   useEffect(() => {
     // Request permissions and start preview automatically
@@ -345,11 +349,18 @@ const StreamEvent = () => {
                   <SurveyManager eventId="demo-event-id" isOrganizer={true} />
                 </CardContent>
               </Card>
+
+              {/* Activity Report */}
+              <Card>
+                <CardContent className="pt-6">
+                  <ActivityReport eventId="demo-event-id" />
+                </CardContent>
+              </Card>
             </div>
 
             {/* Chat Sidebar */}
-            <div className="lg:col-span-1">
-              <Card className="h-[600px] flex flex-col">
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="h-[400px] flex flex-col">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-primary" />
@@ -380,6 +391,29 @@ const StreamEvent = () => {
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
+                </CardContent>
+              </Card>
+
+              {/* Language Switcher */}
+              <LanguageSwitcher 
+                sourceText="Welcome to the live stream!"
+                onTranslate={setTranslatedCaption}
+              />
+              {translatedCaption && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Translated Caption</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm">{translatedCaption}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Breakout Rooms */}
+              <Card>
+                <CardContent className="pt-6">
+                  <BreakoutRoomManager eventId="demo-event-id" isOrganizer={true} />
                 </CardContent>
               </Card>
             </div>

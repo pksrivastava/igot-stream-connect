@@ -14,6 +14,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      breakout_room_participants: {
+        Row: {
+          id: string
+          joined_at: string | null
+          left_at: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breakout_room_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "breakout_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      breakout_rooms: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          is_active: boolean | null
+          max_participants: number | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean | null
+          max_participants?: number | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean | null
+          max_participants?: number | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breakout_rooms_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_participants: {
         Row: {
           event_id: string
@@ -201,6 +268,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      participant_activities: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string | null
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string | null
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_activities_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       poll_responses: {
         Row: {
