@@ -116,30 +116,36 @@ export type Database = {
       event_polls: {
         Row: {
           created_at: string | null
+          created_in_advance: boolean | null
           ends_at: string | null
           event_id: string
           id: string
           is_active: boolean | null
           options: Json
           question: string
+          scheduled_display_at: string | null
         }
         Insert: {
           created_at?: string | null
+          created_in_advance?: boolean | null
           ends_at?: string | null
           event_id: string
           id?: string
           is_active?: boolean | null
           options: Json
           question: string
+          scheduled_display_at?: string | null
         }
         Update: {
           created_at?: string | null
+          created_in_advance?: boolean | null
           ends_at?: string | null
           event_id?: string
           id?: string
           is_active?: boolean | null
           options?: Json
           question?: string
+          scheduled_display_at?: string | null
         }
         Relationships: [
           {
@@ -192,26 +198,32 @@ export type Database = {
       event_surveys: {
         Row: {
           created_at: string | null
+          created_in_advance: boolean | null
           event_id: string
           id: string
           is_active: boolean | null
           questions: Json
+          scheduled_display_at: string | null
           title: string
         }
         Insert: {
           created_at?: string | null
+          created_in_advance?: boolean | null
           event_id: string
           id?: string
           is_active?: boolean | null
           questions: Json
+          scheduled_display_at?: string | null
           title: string
         }
         Update: {
           created_at?: string | null
+          created_in_advance?: boolean | null
           event_id?: string
           id?: string
           is_active?: boolean | null
           questions?: Json
+          scheduled_display_at?: string | null
           title?: string
         }
         Relationships: [
@@ -373,7 +385,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_event_participant: {
+        Args: { _event_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

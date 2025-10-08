@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Plus, X } from "lucide-react";
+import { ClipboardList, Plus, X, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,6 +34,8 @@ export const SurveyManager = ({ eventId, isOrganizer }: SurveyManagerProps) => {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([{ question: "", type: "text" }]);
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [createdInAdvance, setCreatedInAdvance] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -81,6 +84,8 @@ export const SurveyManager = ({ eventId, isOrganizer }: SurveyManagerProps) => {
       event_id: eventId,
       title,
       questions: surveyQuestions,
+      scheduled_display_at: scheduledTime || null,
+      created_in_advance: createdInAdvance,
     });
 
     if (error) {
@@ -98,6 +103,8 @@ export const SurveyManager = ({ eventId, isOrganizer }: SurveyManagerProps) => {
     });
     setTitle("");
     setQuestions([{ question: "", type: "text" }]);
+    setScheduledTime("");
+    setCreatedInAdvance(false);
     setOpen(false);
   };
 
@@ -180,6 +187,36 @@ export const SurveyManager = ({ eventId, isOrganizer }: SurveyManagerProps) => {
                     Add Question
                   </Button>
                 </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="survey-created-in-advance"
+                      checked={createdInAdvance}
+                      onCheckedChange={(checked) => setCreatedInAdvance(checked as boolean)}
+                    />
+                    <Label htmlFor="survey-created-in-advance" className="text-sm font-normal">
+                      Create in advance (schedule for later)
+                    </Label>
+                  </div>
+                  
+                  {createdInAdvance && (
+                    <div>
+                      <Label htmlFor="survey-scheduled-time" className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Scheduled Display Time
+                      </Label>
+                      <Input
+                        id="survey-scheduled-time"
+                        type="datetime-local"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        placeholder="When to display this survey"
+                      />
+                    </div>
+                  )}
+                </div>
+                
                 <Button onClick={createSurvey} className="w-full">
                   Create Survey
                 </Button>

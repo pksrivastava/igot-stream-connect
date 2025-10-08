@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { BarChart3, Plus, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BarChart3, Plus, X, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +32,8 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", ""]);
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [createdInAdvance, setCreatedInAdvance] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,6 +105,8 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
       event_id: eventId,
       question,
       options: pollOptions,
+      scheduled_display_at: scheduledTime || null,
+      created_in_advance: createdInAdvance,
     });
 
     if (error) {
@@ -119,6 +124,8 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
     });
     setQuestion("");
     setOptions(["", ""]);
+    setScheduledTime("");
+    setCreatedInAdvance(false);
     setOpen(false);
   };
 
@@ -204,6 +211,36 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
                     Add Option
                   </Button>
                 </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="created-in-advance"
+                      checked={createdInAdvance}
+                      onCheckedChange={(checked) => setCreatedInAdvance(checked as boolean)}
+                    />
+                    <Label htmlFor="created-in-advance" className="text-sm font-normal">
+                      Create in advance (schedule for later)
+                    </Label>
+                  </div>
+                  
+                  {createdInAdvance && (
+                    <div>
+                      <Label htmlFor="scheduled-time" className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Scheduled Display Time
+                      </Label>
+                      <Input
+                        id="scheduled-time"
+                        type="datetime-local"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        placeholder="When to display this poll"
+                      />
+                    </div>
+                  )}
+                </div>
+                
                 <Button onClick={createPoll} className="w-full">
                   Create Poll
                 </Button>
