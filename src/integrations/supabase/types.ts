@@ -81,6 +81,39 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          event_id: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          message: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          message?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          message?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_participants: {
         Row: {
           event_id: string
@@ -347,6 +380,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      post_event_discussions: {
+        Row: {
+          created_at: string
+          event_id: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       survey_responses: {
         Row: {

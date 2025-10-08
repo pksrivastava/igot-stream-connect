@@ -17,6 +17,8 @@ import { RecordingViewer } from "@/components/RecordingViewer";
 import { BreakoutRoomManager } from "@/components/BreakoutRoomManager";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ActivityReport } from "@/components/ActivityReport";
+import { ChatWithFiles } from "@/components/ChatWithFiles";
+import { PostEventDiscussion } from "@/components/PostEventDiscussion";
 
 const StreamEvent = () => {
   const navigate = useNavigate();
@@ -28,12 +30,11 @@ const StreamEvent = () => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>("");
   const [selectedMic, setSelectedMic] = useState<string>("");
-  const [chatMessage, setChatMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState([
-    { user: "Admin", message: "Welcome to the live stream!", time: "10:00 AM" },
-    { user: "Priya S.", message: "Excited for this session!", time: "10:01 AM" },
-  ]);
   const [translatedCaption, setTranslatedCaption] = useState("");
+  const [eventStatus, setEventStatus] = useState<"live" | "ended">("live");
+  const currentUserId = "demo-user-id"; // Replace with actual user ID
+  const eventId = "demo-event-id";
+  const eventTitle = "Product Launch Webinar";
 
   useEffect(() => {
     // Request permissions and start preview automatically
@@ -136,23 +137,12 @@ const StreamEvent = () => {
 
   const handleEndStream = () => {
     setIsLive(false);
+    setEventStatus("ended");
     stopStream();
     toast({
       title: "Stream Ended",
-      description: "Recording saved. Broadcast stopped.",
+      description: "Recording saved successfully. Post-event discussion is now available.",
     });
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatMessage.trim()) return;
-
-    setChatMessages(prev => [...prev, {
-      user: "You",
-      message: chatMessage,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    }]);
-    setChatMessage("");
   };
 
   return (
@@ -360,39 +350,26 @@ const StreamEvent = () => {
 
             {/* Chat Sidebar */}
             <div className="lg:col-span-1 space-y-6">
-              <Card className="h-[400px] flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                    <CardTitle>Live Chat</CardTitle>
-                  </div>
-                  <CardDescription>Interact with your audience</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col p-4">
-                  <div className="flex-1 space-y-4 overflow-y-auto mb-4">
-                    {chatMessages.map((msg, index) => (
-                      <div key={index} className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">{msg.user}</span>
-                          <span className="text-xs text-muted-foreground">{msg.time}</span>
-                        </div>
-                        <p className="text-sm bg-muted p-2 rounded">{msg.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <Input
-                      value={chatMessage}
-                      onChange={(e) => setChatMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      disabled={!isLive}
-                    />
-                    <Button type="submit" size="icon" disabled={!isLive}>
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+              {eventStatus === "live" ? (
+                <Card className="h-[500px]">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-primary" />
+                      <CardTitle>Live Chat with Files</CardTitle>
+                    </div>
+                    <CardDescription>Share messages and documents</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[calc(100%-5rem)] p-0">
+                    <ChatWithFiles eventId={eventId} currentUserId={currentUserId} />
+                  </CardContent>
+                </Card>
+              ) : (
+                <PostEventDiscussion 
+                  eventId={eventId} 
+                  currentUserId={currentUserId}
+                  eventTitle={eventTitle}
+                />
+              )}
 
               {/* Language Switcher */}
               <LanguageSwitcher 
