@@ -22,6 +22,8 @@ interface Recording {
   file_path: string;
   duration: number;
   created_at: string;
+  file_size?: number;
+  format?: string;
 }
 
 interface PostEventDiscussionProps {
@@ -89,19 +91,30 @@ export const PostEventDiscussion = ({
   };
 
   const handleDownloadRecording = async (recording: Recording) => {
-    const { data } = await supabase.storage
-      .from("event-recordings")
-      .createSignedUrl(recording.file_path, 3600);
+    try {
+      const { data, error } = await supabase.storage
+        .from("event-recordings")
+        .createSignedUrl(recording.file_path, 3600);
 
-    if (data?.signedUrl) {
-      const link = document.createElement("a");
-      link.href = data.signedUrl;
-      link.download = `recording-${new Date(recording.created_at).toISOString()}.mp4`;
-      link.click();
+      if (error) throw error;
 
+      if (data?.signedUrl) {
+        const link = document.createElement("a");
+        link.href = data.signedUrl;
+        link.download = `${eventTitle}-${new Date(recording.created_at).toISOString().split('T')[0]}.mp4`;
+        link.click();
+
+        toast({
+          title: "Download Started",
+          description: "Your MP4 recording is downloading",
+        });
+      }
+    } catch (error) {
+      console.error("Error downloading recording:", error);
       toast({
-        title: "Download Started",
-        description: "Your MP4 recording is downloading",
+        title: "Download Failed",
+        description: "Could not download the recording",
+        variant: "destructive",
       });
     }
   };
@@ -268,9 +281,16 @@ export const PostEventDiscussion = ({
                       <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                         MP4 FORMAT
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        Duration: {Math.floor(recording.duration / 60)}min {recording.duration % 60}sec
-                      </span>
+                      {recording.duration && (
+                        <span className="text-xs text-muted-foreground">
+                          Duration: {Math.floor(recording.duration / 60)}min {recording.duration % 60}sec
+                        </span>
+                      )}
+                      {recording.file_size && (
+                        <span className="text-xs text-muted-foreground">
+                          Size: {(recording.file_size / (1024 * 1024)).toFixed(1)} MB
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
