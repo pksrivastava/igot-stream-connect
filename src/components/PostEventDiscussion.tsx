@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Paperclip, Download, X, MessageSquare } from "lucide-react";
+import { Send, Paperclip, Download, X, MessageSquare, Video } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Discussion {
   id: string;
@@ -14,6 +14,13 @@ interface Discussion {
   file_path: string | null;
   file_name: string | null;
   file_size: number | null;
+  created_at: string;
+}
+
+interface Recording {
+  id: string;
+  file_path: string;
+  duration: number;
   created_at: string;
 }
 
@@ -29,6 +36,7 @@ export const PostEventDiscussion = ({
   eventTitle,
 }: PostEventDiscussionProps) => {
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,6 +46,7 @@ export const PostEventDiscussion = ({
 
   useEffect(() => {
     fetchDiscussions();
+    fetchRecordings();
     subscribeToDiscussions();
   }, [eventId]);
 
@@ -62,6 +71,39 @@ export const PostEventDiscussion = ({
     }
 
     setDiscussions(data || []);
+  };
+
+  const fetchRecordings = async () => {
+    const { data, error } = await supabase
+      .from("event_recordings")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching recordings:", error);
+      return;
+    }
+
+    setRecordings(data || []);
+  };
+
+  const handleDownloadRecording = async (recording: Recording) => {
+    const { data } = await supabase.storage
+      .from("event-recordings")
+      .createSignedUrl(recording.file_path, 3600);
+
+    if (data?.signedUrl) {
+      const link = document.createElement("a");
+      link.href = data.signedUrl;
+      link.download = `recording-${new Date(recording.created_at).toISOString()}.mp4`;
+      link.click();
+
+      toast({
+        title: "Download Started",
+        description: "Your MP4 recording is downloading",
+      });
+    }
   };
 
   const subscribeToDiscussions = () => {
@@ -187,14 +229,61 @@ export const PostEventDiscussion = ({
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Post-Event Discussion: {eventTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col overflow-hidden">
+    <div className="space-y-4">
+      {/* Recording Downloads */}
+      {recordings.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5" />
+              Download Recordings
+            </CardTitle>
+            <CardDescription>
+              HLS recordings available in MP4 format
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {recordings.map((recording) => (
+              <div
+                key={recording.id}
+                className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <Video className="h-4 w-4 text-primary" />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {new Date(recording.created_at).toLocaleDateString()} -{" "}
+                      {new Date(recording.created_at).toLocaleTimeString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Duration: {Math.floor(recording.duration / 60)}:
+                      {(recording.duration % 60).toString().padStart(2, "0")}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadRecording(recording)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download MP4
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Discussion */}
+      <Card className="h-[600px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Post-Event Discussion: {eventTitle}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col overflow-hidden">
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
             {discussions.length === 0 ? (
@@ -310,5 +399,6 @@ export const PostEventDiscussion = ({
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };
