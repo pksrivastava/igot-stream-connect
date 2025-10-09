@@ -244,10 +244,17 @@ const StreamEvent = () => {
                       </div>
                     )}
                     {isLive && liveCaptions && (
-                      <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg">
-                        <p className="text-white text-center text-sm md:text-base">
-                          {liveCaptions}
-                        </p>
+                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-3xl">
+                        <div className="bg-gradient-to-r from-primary/95 to-primary-dark/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/20">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1">
+                              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                            </div>
+                            <p className="text-white text-base md:text-lg leading-relaxed flex-1 font-medium">
+                              {liveCaptions}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     )}
                     {!stream && (

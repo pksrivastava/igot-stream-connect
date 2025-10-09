@@ -232,41 +232,54 @@ export const PostEventDiscussion = ({
     <div className="space-y-4">
       {/* Recording Downloads */}
       {recordings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="h-5 w-5" />
-              Download Recordings
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary-dark/5">
+          <CardHeader className="bg-primary/5 border-b border-primary/10">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                <Video className="h-5 w-5 text-primary" />
+              </div>
+              Event Recordings Available
             </CardTitle>
-            <CardDescription>
-              HLS recordings available in MP4 format
+            <CardDescription className="ml-13">
+              Download your HLS recordings converted to MP4 format
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3 pt-6">
             {recordings.map((recording) => (
               <div
                 key={recording.id}
-                className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg"
+                className="group flex items-center justify-between p-4 bg-background hover:bg-accent/50 rounded-xl border border-border hover:border-primary/30 transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                <div className="flex items-center gap-3">
-                  <Video className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-primary-dark/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Video className="h-6 w-6 text-primary" />
+                  </div>
                   <div>
-                    <p className="font-medium text-sm">
-                      {new Date(recording.created_at).toLocaleDateString()} -{" "}
-                      {new Date(recording.created_at).toLocaleTimeString()}
+                    <p className="font-semibold text-base">
+                      Recording - {new Date(recording.created_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Duration: {Math.floor(recording.duration / 60)}:
-                      {(recording.duration % 60).toString().padStart(2, "0")}
-                    </p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        MP4 FORMAT
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Duration: {Math.floor(recording.duration / 60)}min {recording.duration % 60}sec
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={() => handleDownloadRecording(recording)}
+                  className="gap-2 bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transition-all"
                 >
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4" />
                   Download MP4
                 </Button>
               </div>
