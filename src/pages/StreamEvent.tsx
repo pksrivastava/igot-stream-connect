@@ -32,6 +32,8 @@ const StreamEvent = () => {
   const [selectedMic, setSelectedMic] = useState<string>("");
   const [translatedCaption, setTranslatedCaption] = useState("");
   const [eventStatus, setEventStatus] = useState<"live" | "ended">("live");
+  const [liveCaptions, setLiveCaptions] = useState("");
+  const [recognition, setRecognition] = useState<any>(null);
   const currentUserId = "demo-user-id"; // Replace with actual user ID
   const eventId = "demo-event-id";
   const eventTitle = "Product Launch Webinar";
@@ -40,9 +42,13 @@ const StreamEvent = () => {
     // Request permissions and start preview automatically
     startPreview();
     getDevices();
+    setupSpeechRecognition();
     
     return () => {
       stopStream();
+      if (recognition) {
+        recognition.stop();
+      }
     };
   }, []);
 
@@ -118,6 +124,38 @@ const StreamEvent = () => {
     }
   };
 
+  const setupSpeechRecognition = () => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
+
+      recognitionInstance.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        setLiveCaptions(finalTranscript || interimTranscript);
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  };
+
   const handleGoLive = () => {
     if (!stream) {
       toast({
@@ -129,19 +167,25 @@ const StreamEvent = () => {
     }
     
     setIsLive(true);
+    if (recognition) {
+      recognition.start();
+    }
     toast({
       title: "Stream Started",
-      description: "Broadcasting live in HLS mode. Recording automatically started.",
+      description: "Broadcasting live in HLS mode. Recording and captions started.",
     });
   };
 
   const handleEndStream = () => {
     setIsLive(false);
     setEventStatus("ended");
+    if (recognition) {
+      recognition.stop();
+    }
     stopStream();
     toast({
       title: "Stream Ended",
-      description: "Recording saved successfully. Post-event discussion is now available.",
+      description: "Recording saved successfully. Download MP4 in post-event discussion.",
     });
   };
 
@@ -197,6 +241,13 @@ const StreamEvent = () => {
                           <Radio className="h-3 w-3 mr-1" />
                           LIVE • HLS Recording
                         </Badge>
+                      </div>
+                    )}
+                    {isLive && liveCaptions && (
+                      <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg">
+                        <p className="text-white text-center text-sm md:text-base">
+                          {liveCaptions}
+                        </p>
                       </div>
                     )}
                     {!stream && (
