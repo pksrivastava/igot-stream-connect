@@ -68,12 +68,32 @@ export const RecordingViewer = ({ eventId }: RecordingViewerProps) => {
   };
 
   const handleDownload = async (recording: Recording) => {
-    const url = await getRecordingUrl(recording.file_path);
-    if (url) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("event-recordings")
+        .download(recording.file_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
       const link = document.createElement("a");
       link.href = url;
-      link.download = recording.file_path;
+      link.download = recording.file_path.split("/").pop() || "recording.mp4";
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download started",
+        description: "Your recording is downloading...",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Download failed",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 

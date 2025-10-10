@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,21 +15,44 @@ import Footer from "@/components/Footer";
 const CreateEvent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     title: "",
     type: "",
     date: "",
     time: "",
-    duration: "",
+    duration: "60",
     description: "",
     agenda: "",
     presenter: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create events.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     if (!formData.title || !formData.type || !formData.date || !formData.time) {
       toast({
         title: "Missing Information",
@@ -38,13 +62,42 @@ const CreateEvent = () => {
       return;
     }
 
-    toast({
-      title: "Event Created Successfully",
-      description: `${formData.title} has been scheduled for ${formData.date} at ${formData.time}.`,
-    });
+    setLoading(true);
 
-    // Navigate to events page or dashboard
-    setTimeout(() => navigate("/"), 1500);
+    try {
+      const scheduledDate = new Date(`${formData.date}T${formData.time}`);
+      
+      const { data, error } = await supabase
+        .from("events")
+        .insert({
+          title: formData.title,
+          event_type: formData.type,
+          scheduled_date: scheduledDate.toISOString(),
+          duration: parseInt(formData.duration) || 60,
+          description: formData.description,
+          organizer_id: user.id,
+          status: "upcoming",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Event Created Successfully",
+        description: `${formData.title} has been scheduled. Redirecting to streaming...`,
+      });
+
+      setTimeout(() => navigate(`/event/${data.id}`), 1500);
+    } catch (error: any) {
+      toast({
+        title: "Error creating event",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -58,11 +111,11 @@ const CreateEvent = () => {
         <div className="container max-w-4xl">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/events")}
             className="mb-6"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            Back to Events
           </Button>
 
           <Card>
@@ -177,14 +230,14 @@ const CreateEvent = () => {
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <Button type="submit" size="lg" className="flex-1">
-                    Create Event
+                  <Button type="submit" size="lg" className="flex-1" disabled={loading}>
+                    {loading ? "Creating Event..." : "Create Event & Start Streaming"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="lg"
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/events")}
                   >
                     Cancel
                   </Button>

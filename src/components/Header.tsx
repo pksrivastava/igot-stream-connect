@@ -56,15 +56,14 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
-              <span className="text-sm text-muted-foreground">
-                {user.email}
-              </span>
+              <Button onClick={() => navigate("/events")}>My Events</Button>
+              <Button onClick={() => navigate("/create-event")}>Create Event</Button>
               <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
             </>
           ) : (
             <>
               <Button variant="ghost" onClick={() => navigate("/auth")}>Sign In</Button>
-              <Button variant="hero" onClick={() => navigate("/auth")}>Get Started</Button>
+              <Button onClick={() => navigate("/auth")}>Get Started</Button>
             </>
           )}
         </div>

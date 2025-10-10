@@ -150,6 +150,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_in_advance: boolean | null
+          displayed_at: string | null
           ends_at: string | null
           event_id: string
           id: string
@@ -161,6 +162,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          displayed_at?: string | null
           ends_at?: string | null
           event_id: string
           id?: string
@@ -172,6 +174,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          displayed_at?: string | null
           ends_at?: string | null
           event_id?: string
           id?: string
@@ -232,6 +235,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_in_advance: boolean | null
+          displayed_at: string | null
           event_id: string
           id: string
           is_active: boolean | null
@@ -242,6 +246,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          displayed_at?: string | null
           event_id: string
           id?: string
           is_active?: boolean | null
@@ -252,6 +257,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          displayed_at?: string | null
           event_id?: string
           id?: string
           is_active?: boolean | null
@@ -279,6 +285,8 @@ export type Database = {
           organizer_id: string
           recording_url: string | null
           scheduled_date: string
+          scheduled_polls: Json | null
+          scheduled_surveys: Json | null
           status: string | null
           stream_url: string | null
           title: string
@@ -293,6 +301,8 @@ export type Database = {
           organizer_id: string
           recording_url?: string | null
           scheduled_date: string
+          scheduled_polls?: Json | null
+          scheduled_surveys?: Json | null
           status?: string | null
           stream_url?: string | null
           title: string
@@ -307,6 +317,8 @@ export type Database = {
           organizer_id?: string
           recording_url?: string | null
           scheduled_date?: string
+          scheduled_polls?: Json | null
+          scheduled_surveys?: Json | null
           status?: string | null
           stream_url?: string | null
           title?: string
@@ -411,6 +423,30 @@ export type Database = {
           id?: string
           message?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

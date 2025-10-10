@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import { PostEventDiscussion } from "@/components/PostEventDiscussion";
 
 const StreamEvent = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLive, setIsLive] = useState(false);
@@ -34,23 +36,86 @@ const StreamEvent = () => {
   const [eventStatus, setEventStatus] = useState<"live" | "ended">("live");
   const [liveCaptions, setLiveCaptions] = useState("");
   const [recognition, setRecognition] = useState<any>(null);
-  const currentUserId = "demo-user-id"; // Replace with actual user ID
-  const eventId = "demo-event-id";
-  const eventTitle = "Product Launch Webinar";
+  const [event, setEvent] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Request permissions and start preview automatically
-    startPreview();
-    getDevices();
-    setupSpeechRecognition();
-    
+    const checkAuthAndFetchEvent = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+
+      if (!id) {
+        toast({
+          title: "Invalid event",
+          description: "Event ID is missing",
+          variant: "destructive",
+        });
+        navigate("/events");
+        return;
+      }
+
+      try {
+        const { data: eventData, error } = await supabase
+          .from("events")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+
+        if (eventData.organizer_id !== session.user.id) {
+          toast({
+            title: "Access denied",
+            description: "You don't have permission to manage this event",
+            variant: "destructive",
+          });
+          navigate("/events");
+          return;
+        }
+
+        setEvent(eventData);
+        setEventStatus(eventData.status === "ended" ? "ended" : "live");
+      } catch (error: any) {
+        toast({
+          title: "Error loading event",
+          description: error.message,
+          variant: "destructive",
+        });
+        navigate("/events");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthAndFetchEvent();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
     return () => {
+      subscription.unsubscribe();
       stopStream();
       if (recognition) {
         recognition.stop();
       }
     };
-  }, []);
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (event && !loading) {
+      startPreview();
+      getDevices();
+      setupSpeechRecognition();
+    }
+  }, [event, loading]);
 
   useEffect(() => {
     if (selectedCamera || selectedMic) {
@@ -156,8 +221,8 @@ const StreamEvent = () => {
     }
   };
 
-  const handleGoLive = () => {
-    if (!stream) {
+  const handleGoLive = async () => {
+    if (!stream || !event) {
       toast({
         title: "Error",
         description: "Please enable camera and microphone first",
@@ -165,29 +230,73 @@ const StreamEvent = () => {
       });
       return;
     }
-    
-    setIsLive(true);
-    if (recognition) {
-      recognition.start();
+
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "live" })
+        .eq("id", event.id);
+
+      if (error) throw error;
+
+      setIsLive(true);
+      if (recognition) {
+        recognition.start();
+      }
+      toast({
+        title: "Stream Started",
+        description: "Broadcasting live. Recording and captions started.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error starting stream",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-    toast({
-      title: "Stream Started",
-      description: "Broadcasting live in HLS mode. Recording and captions started.",
-    });
   };
 
-  const handleEndStream = () => {
-    setIsLive(false);
-    setEventStatus("ended");
-    if (recognition) {
-      recognition.stop();
+  const handleEndStream = async () => {
+    if (!event) return;
+
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "ended" })
+        .eq("id", event.id);
+
+      if (error) throw error;
+
+      setIsLive(false);
+      setEventStatus("ended");
+      if (recognition) {
+        recognition.stop();
+      }
+      stopStream();
+      toast({
+        title: "Stream Ended",
+        description: "Recording saved successfully. Download MP4 in post-event discussion.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error ending stream",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-    stopStream();
-    toast({
-      title: "Stream Ended",
-      description: "Recording saved successfully. Download MP4 in post-event discussion.",
-    });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading event...</p>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -196,11 +305,11 @@ const StreamEvent = () => {
         <div className="container max-w-7xl">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/events")}
             className="mb-6"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            Back to Events
           </Button>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -214,8 +323,8 @@ const StreamEvent = () => {
                         <Video className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-2xl">Live Stream</CardTitle>
-                        <CardDescription>Digital Governance Workshop</CardDescription>
+                        <CardTitle className="text-2xl">{event.title}</CardTitle>
+                        <CardDescription>{event.event_type}</CardDescription>
                       </div>
                     </div>
                     {isLive && (
@@ -356,7 +465,7 @@ const StreamEvent = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Stream Information</CardTitle>
-                    <InviteParticipants eventId="demo-event-id" />
+                    <InviteParticipants eventId={event.id} />
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -383,26 +492,26 @@ const StreamEvent = () => {
               </Card>
 
               {/* Recordings */}
-              <RecordingViewer eventId="demo-event-id" />
+              <RecordingViewer eventId={event.id} />
 
               {/* Polls */}
               <Card>
                 <CardContent className="pt-6">
-                  <PollManager eventId="demo-event-id" isOrganizer={true} />
+                  <PollManager eventId={event.id} isOrganizer={true} />
                 </CardContent>
               </Card>
 
               {/* Surveys */}
               <Card>
                 <CardContent className="pt-6">
-                  <SurveyManager eventId="demo-event-id" isOrganizer={true} />
+                  <SurveyManager eventId={event.id} isOrganizer={true} />
                 </CardContent>
               </Card>
 
               {/* Activity Report */}
               <Card>
                 <CardContent className="pt-6">
-                  <ActivityReport eventId="demo-event-id" />
+                  <ActivityReport eventId={event.id} />
                 </CardContent>
               </Card>
             </div>
@@ -419,14 +528,14 @@ const StreamEvent = () => {
                     <CardDescription>Share messages and documents</CardDescription>
                   </CardHeader>
                   <CardContent className="h-[calc(100%-5rem)] p-0">
-                    <ChatWithFiles eventId={eventId} currentUserId={currentUserId} />
+                    <ChatWithFiles eventId={event.id} currentUserId={user?.id || ""} />
                   </CardContent>
                 </Card>
               ) : (
                 <PostEventDiscussion 
-                  eventId={eventId} 
-                  currentUserId={currentUserId}
-                  eventTitle={eventTitle}
+                  eventId={event.id} 
+                  currentUserId={user?.id || ""}
+                  eventTitle={event.title}
                 />
               )}
 
@@ -449,7 +558,7 @@ const StreamEvent = () => {
               {/* Breakout Rooms */}
               <Card>
                 <CardContent className="pt-6">
-                  <BreakoutRoomManager eventId="demo-event-id" isOrganizer={true} />
+                  <BreakoutRoomManager eventId={event.id} isOrganizer={true} />
                 </CardContent>
               </Card>
             </div>
