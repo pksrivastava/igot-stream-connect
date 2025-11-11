@@ -487,6 +487,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_event_organizer: {
+        Args: { _event_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_event_participant: {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
