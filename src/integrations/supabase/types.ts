@@ -119,21 +119,21 @@ export type Database = {
           event_id: string
           id: string
           joined_at: string | null
-          role: string | null
+          role: Database["public"]["Enums"]["participant_role"] | null
           user_id: string
         }
         Insert: {
           event_id: string
           id?: string
           joined_at?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["participant_role"] | null
           user_id: string
         }
         Update: {
           event_id?: string
           id?: string
           joined_at?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["participant_role"] | null
           user_id?: string
         }
         Relationships: [
@@ -150,6 +150,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_in_advance: boolean | null
+          display_timestamp: number | null
           displayed_at: string | null
           ends_at: string | null
           event_id: string
@@ -162,6 +163,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          display_timestamp?: number | null
           displayed_at?: string | null
           ends_at?: string | null
           event_id: string
@@ -174,6 +176,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          display_timestamp?: number | null
           displayed_at?: string | null
           ends_at?: string | null
           event_id?: string
@@ -235,6 +238,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_in_advance: boolean | null
+          display_timestamp: number | null
           displayed_at: string | null
           event_id: string
           id: string
@@ -246,6 +250,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          display_timestamp?: number | null
           displayed_at?: string | null
           event_id: string
           id?: string
@@ -257,6 +262,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_in_advance?: boolean | null
+          display_timestamp?: number | null
           displayed_at?: string | null
           event_id?: string
           id?: string
@@ -450,6 +456,44 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_quality_metrics: {
+        Row: {
+          bandwidth_mbps: number | null
+          event_id: string
+          id: string
+          latency_ms: number | null
+          packet_loss_percent: number | null
+          recorded_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bandwidth_mbps?: number | null
+          event_id: string
+          id?: string
+          latency_ms?: number | null
+          packet_loss_percent?: number | null
+          recorded_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bandwidth_mbps?: number | null
+          event_id?: string
+          id?: string
+          latency_ms?: number | null
+          packet_loss_percent?: number | null
+          recorded_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stream_quality_metrics_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_responses: {
         Row: {
           created_at: string | null
@@ -497,7 +541,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      participant_role: "organizer" | "moderator" | "presenter" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -624,6 +668,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      participant_role: ["organizer", "moderator", "presenter", "viewer"],
+    },
   },
 } as const

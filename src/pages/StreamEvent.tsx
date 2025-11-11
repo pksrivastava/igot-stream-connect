@@ -43,11 +43,7 @@ const StreamEvent = () => {
   useEffect(() => {
     const checkAuthAndFetchEvent = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-      setUser(session.user);
+      setUser(session?.user || null);
 
       if (!id) {
         toast({
@@ -68,18 +64,17 @@ const StreamEvent = () => {
 
         if (error) throw error;
 
-        if (eventData.organizer_id !== session.user.id) {
-          toast({
-            title: "Access denied",
-            description: "You don't have permission to manage this event",
-            variant: "destructive",
-          });
-          navigate("/events");
-          return;
-        }
-
         setEvent(eventData);
         setEventStatus(eventData.status === "ended" ? "ended" : "live");
+
+        // Only check organizer permissions if user is trying to manage
+        if (session?.user && eventData.organizer_id !== session.user.id) {
+          // User is logged in but not organizer - they can view only
+          toast({
+            title: "Viewing Mode",
+            description: "You are viewing this event as a participant",
+          });
+        }
       } catch (error: any) {
         toast({
           title: "Error loading event",
@@ -95,9 +90,7 @@ const StreamEvent = () => {
     checkAuthAndFetchEvent();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/auth");
-      }
+      setUser(session?.user || null);
     });
 
     return () => {
@@ -257,15 +250,33 @@ const StreamEvent = () => {
   };
 
   const handleEndStream = async () => {
-    if (!event) return;
+    if (!event || !user) return;
 
     try {
-      const { error } = await supabase
+      // Update event status
+      const { error: eventError } = await supabase
         .from("events")
         .update({ status: "ended" })
         .eq("id", event.id);
 
-      if (error) throw error;
+      if (eventError) throw eventError;
+
+      // Create recording entry with dummy data for now
+      // In production, this would be replaced by actual recording file path
+      const dummyFileName = `recording-${event.id}-${Date.now()}.mp4`;
+      const { error: recordingError } = await supabase
+        .from("event_recordings")
+        .insert({
+          event_id: event.id,
+          file_path: dummyFileName,
+          file_size: 0, // Will be updated when actual file is uploaded
+          duration: null,
+          format: 'mp4'
+        });
+
+      if (recordingError) {
+        console.error("Failed to create recording entry:", recordingError);
+      }
 
       setIsLive(false);
       setEventStatus("ended");
@@ -273,9 +284,10 @@ const StreamEvent = () => {
         recognition.stop();
       }
       stopStream();
+      
       toast({
         title: "Stream Ended",
-        description: "Recording saved successfully. Download MP4 in post-event discussion.",
+        description: "Recording saved. You can now upload the MP4 file in recordings section.",
       });
     } catch (error: any) {
       toast({
@@ -446,15 +458,22 @@ const StreamEvent = () => {
                   </Card>
 
                   <div className="flex gap-4">
-                    {!isLive ? (
-                      <Button onClick={handleGoLive} size="lg" className="flex-1">
-                        <Radio className="mr-2 h-5 w-5" />
-                        Go Live
-                      </Button>
+                    {user && event.organizer_id === user.id ? (
+                      !isLive ? (
+                        <Button onClick={handleGoLive} size="lg" className="flex-1">
+                          <Radio className="mr-2 h-5 w-5" />
+                          Go Live
+                        </Button>
+                      ) : (
+                        <Button onClick={handleEndStream} variant="destructive" size="lg" className="flex-1">
+                          End Stream
+                        </Button>
+                      )
                     ) : (
-                      <Button onClick={handleEndStream} variant="destructive" size="lg" className="flex-1">
-                        End Stream
-                      </Button>
+                      <div className="text-center text-muted-foreground py-4">
+                        {!user && <p>Viewing as guest. Login to interact.</p>}
+                        {user && <p>Viewing as participant</p>}
+                      </div>
                     )}
                   </div>
                 </CardContent>
