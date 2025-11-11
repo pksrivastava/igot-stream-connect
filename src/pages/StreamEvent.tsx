@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Video, Radio, Users, MessageSquare, ArrowLeft, Send, Mic, Camera, Settings } from "lucide-react";
+import { Video, Radio, Users, MessageSquare, ArrowLeft, Send, Mic, Camera, Settings, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -39,6 +39,10 @@ const StreamEvent = () => {
   const [event, setEvent] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [streamDuration, setStreamDuration] = useState(0);
+  const [activePoll, setActivePoll] = useState<any>(null);
+  const [isMicOn, setIsMicOn] = useState(true);
+  const [isCameraOn, setIsCameraOn] = useState(true);
 
   useEffect(() => {
     const checkAuthAndFetchEvent = async () => {
@@ -110,6 +114,47 @@ const StreamEvent = () => {
     }
   }, [event, loading]);
 
+  // Stream duration timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLive) {
+      interval = setInterval(() => {
+        setStreamDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      setStreamDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [isLive]);
+
+  // Poll scheduling checker
+  useEffect(() => {
+    if (!isLive || !event) return;
+
+    const checkPolls = async () => {
+      const { data: polls } = await supabase
+        .from("event_polls")
+        .select("*")
+        .eq("event_id", event.id)
+        .is("displayed_at", null)
+        .not("display_timestamp", "is", null);
+
+      if (polls) {
+        polls.forEach(async (poll) => {
+          if (poll.display_timestamp && streamDuration >= poll.display_timestamp) {
+            setActivePoll(poll);
+            await supabase
+              .from("event_polls")
+              .update({ displayed_at: new Date().toISOString() })
+              .eq("id", poll.id);
+          }
+        });
+      }
+    };
+
+    checkPolls();
+  }, [streamDuration, isLive, event]);
+
   useEffect(() => {
     if (selectedCamera || selectedMic) {
       startPreview();
@@ -180,6 +225,31 @@ const StreamEvent = () => {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+  };
+
+  const toggleMic = () => {
+    if (stream) {
+      stream.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsMicOn(!isMicOn);
+    }
+  };
+
+  const toggleCamera = () => {
+    if (stream) {
+      stream.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsCameraOn(!isCameraOn);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const setupSpeechRecognition = () => {
@@ -348,7 +418,7 @@ const StreamEvent = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6 relative">
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
                     <video
                       ref={videoRef}
                       autoPlay
@@ -356,12 +426,89 @@ const StreamEvent = () => {
                       muted
                       className="w-full h-full object-cover"
                     />
+                    
+                    {/* Top Bar - Live Indicator */}
                     {isLive && (
-                      <div className="absolute top-4 left-4">
+                      <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
                         <Badge className="bg-red-500 animate-pulse">
                           <Radio className="h-3 w-3 mr-1" />
-                          LIVE • HLS Recording
+                          LIVE
                         </Badge>
+                        <div className="bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm font-mono">
+                          {formatDuration(streamDuration)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Active Poll Overlay */}
+                    {activePoll && isLive && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <Card className="w-full max-w-md">
+                          <CardHeader>
+                            <CardTitle>{activePoll.question}</CardTitle>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => setActivePoll(null)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            {activePoll.options?.map((option: any) => (
+                              <Button
+                                key={option.id}
+                                variant="outline"
+                                className="w-full"
+                                onClick={async () => {
+                                  const { data: { user } } = await supabase.auth.getUser();
+                                  if (user) {
+                                    await supabase.from("poll_responses").insert({
+                                      poll_id: activePoll.id,
+                                      user_id: user.id,
+                                      option_id: option.id,
+                                    });
+                                    toast({ title: "Vote recorded" });
+                                    setActivePoll(null);
+                                  }
+                                }}
+                              >
+                                {option.text}
+                              </Button>
+                            ))}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                    
+                    {/* Bottom Controls Bar (Zoom-like) */}
+                    {isLive && user && event.organizer_id === user.id && (
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-background/95 backdrop-blur-sm p-2 rounded-full border shadow-lg">
+                        <Button
+                          variant={isMicOn ? "default" : "destructive"}
+                          size="icon"
+                          className="rounded-full"
+                          onClick={toggleMic}
+                        >
+                          <Mic className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant={isCameraOn ? "default" : "destructive"}
+                          size="icon"
+                          className="rounded-full"
+                          onClick={toggleCamera}
+                        >
+                          <Camera className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="rounded-full px-6"
+                          onClick={handleEndStream}
+                        >
+                          End Stream
+                        </Button>
                       </div>
                     )}
                     {isLive && liveCaptions && (
@@ -389,8 +536,10 @@ const StreamEvent = () => {
                     )}
                   </div>
 
-                  {/* Device Settings */}
-                  <Card className="mb-6 bg-secondary/30">
+                  {!isLive && user && event.organizer_id === user.id && (
+                    <>
+                      {/* Device Settings */}
+                      <Card className="mt-6 bg-secondary/30">
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Settings className="h-5 w-5 text-primary" />
@@ -458,24 +607,22 @@ const StreamEvent = () => {
                   </Card>
 
                   <div className="flex gap-4">
-                    {user && event.organizer_id === user.id ? (
-                      !isLive ? (
-                        <Button onClick={handleGoLive} size="lg" className="flex-1">
-                          <Radio className="mr-2 h-5 w-5" />
-                          Go Live
-                        </Button>
-                      ) : (
-                        <Button onClick={handleEndStream} variant="destructive" size="lg" className="flex-1">
-                          End Stream
-                        </Button>
-                      )
-                    ) : (
-                      <div className="text-center text-muted-foreground py-4">
-                        {!user && <p>Viewing as guest. Login to interact.</p>}
-                        {user && <p>Viewing as participant</p>}
-                      </div>
+                    {user && event.organizer_id === user.id && !isLive && (
+                      <Button onClick={handleGoLive} size="lg" className="flex-1">
+                        <Radio className="mr-2 h-5 w-5" />
+                        Go Live
+                      </Button>
                     )}
                   </div>
+                    </>
+                  )}
+
+                  {(!user || (user && event.organizer_id !== user.id)) && (
+                    <div className="text-center text-muted-foreground py-4 mt-6">
+                      {!user && <p>Viewing as guest. Login to interact.</p>}
+                      {user && <p>Viewing as participant</p>}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -511,7 +658,7 @@ const StreamEvent = () => {
               </Card>
 
               {/* Recordings */}
-              <RecordingViewer eventId={event.id} />
+              <RecordingViewer eventId={event.id} isOrganizer={user && event.organizer_id === user.id} />
 
               {/* Polls */}
               <Card>

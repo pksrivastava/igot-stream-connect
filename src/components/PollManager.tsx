@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Plus, X, Clock } from "lucide-react";
+import { BarChart3, Plus, X, Clock, Timer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,6 +33,7 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [scheduledTime, setScheduledTime] = useState("");
+  const [displayTimestamp, setDisplayTimestamp] = useState("");
   const [createdInAdvance, setCreatedInAdvance] = useState(false);
   const { toast } = useToast();
 
@@ -101,11 +102,16 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
         votes: 0
       }));
 
+    const timestampInSeconds = displayTimestamp ? 
+      parseInt(displayTimestamp.split(':')[0]) * 60 + parseInt(displayTimestamp.split(':')[1]) : 
+      null;
+
     const { error } = await supabase.from("event_polls").insert({
       event_id: eventId,
       question,
       options: pollOptions,
       scheduled_display_at: scheduledTime || null,
+      display_timestamp: timestampInSeconds,
       created_in_advance: createdInAdvance,
     });
 
@@ -125,6 +131,7 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
     setQuestion("");
     setOptions(["", ""]);
     setScheduledTime("");
+    setDisplayTimestamp("");
     setCreatedInAdvance(false);
     setOpen(false);
   };
@@ -225,19 +232,38 @@ export const PollManager = ({ eventId, isOrganizer }: PollManagerProps) => {
                   </div>
                   
                   {createdInAdvance && (
-                    <div>
-                      <Label htmlFor="scheduled-time" className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Scheduled Display Time
-                      </Label>
-                      <Input
-                        id="scheduled-time"
-                        type="datetime-local"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                        placeholder="When to display this poll"
-                      />
-                    </div>
+                    <>
+                      <div>
+                        <Label htmlFor="scheduled-time" className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Scheduled Display Time (Calendar)
+                        </Label>
+                        <Input
+                          id="scheduled-time"
+                          type="datetime-local"
+                          value={scheduledTime}
+                          onChange={(e) => setScheduledTime(e.target.value)}
+                          placeholder="When to display this poll"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="display-timestamp" className="flex items-center gap-2">
+                          <Timer className="h-4 w-4" />
+                          Display at Stream Time (MM:SS)
+                        </Label>
+                        <Input
+                          id="display-timestamp"
+                          type="text"
+                          value={displayTimestamp}
+                          onChange={(e) => setDisplayTimestamp(e.target.value)}
+                          placeholder="e.g., 05:30 for 5 minutes 30 seconds"
+                          pattern="[0-5]?[0-9]:[0-5][0-9]"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Poll will appear automatically at this time during the stream
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
                 
